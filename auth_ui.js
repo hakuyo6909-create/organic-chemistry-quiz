@@ -134,6 +134,8 @@
         rec.durationMs = durationMs;
         rec.autoEnded = autoEnded;
         await DB.putSession(rec);
+        // クラウド集約（設定時のみ。セッション要約を送信）
+        if (global.OrgQuizSync) { try { global.OrgQuizSync.enqueueSession(rec); } catch (_) {} }
       }
       // プロファイル累計時間に加算
       const prof = (await DB.getProfile(studentId)) || {

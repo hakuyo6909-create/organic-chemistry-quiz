@@ -54,6 +54,8 @@
     };
     try { await DB.putEvent(ev); }
     catch (e) { console.warn('[logger] putEvent failed:', e); }
+    // クラウド集約（設定時のみ。オフラインでも溜めて後送）
+    if (global.OrgQuizSync) { try { global.OrgQuizSync.enqueueEvent(ev); } catch (_) {} }
   }
 
   // ── 個別ヘルパー ───────────────────────────────
