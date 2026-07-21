@@ -1,0 +1,10 @@
+{
+  "dependencies": {
+    "@rdkit/rdkit": "^2025.3.4-1.0.0",
+    "3dmol": "^2.5.5",
+    "jsme-editor": "^2024.4.29"
+  },
+  "devDependencies": {
+    "playwright": "^1.61.1"
+  }
+}

@@ -1,0 +1,912 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <!-- 検索エンジン・AI クローラー除外: 教員が URL を直接渡す形で運用 -->
+  <meta name="robots" content="noindex, nofollow, noarchive, nosnippet, noimageindex" />
+  <meta name="googlebot" content="noindex, nofollow, noarchive, nosnippet, noimageindex" />
+  <meta name="googlebot-news" content="noindex, nofollow" />
+  <meta name="bingbot" content="noindex, nofollow, noarchive" />
+  <meta name="referrer" content="no-referrer" />
+  <title>有機化学クイズ</title>
+  <!-- インライン(データURI)ファビコン: オフラインでも 404 を出さず、外部通信もしない。ベンゼン環モチーフ -->
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%232b6cb0'/%3E%3Cg fill='none' stroke='white' stroke-width='2'%3E%3Cpolygon points='16,6 25,11 25,21 16,26 7,21 7,11'/%3E%3Ccircle cx='16' cy='16' r='5.5'/%3E%3C/g%3E%3C/svg%3E" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+<nav class="site-nav">
+  <a class="site-nav-home" href="../index.html">⚗️ ポータルへ</a>
+  <span class="site-nav-sep">/</span>
+  <span class="site-nav-current">有機化学クイズ</span>
+
+  <!-- 認証ステータス（ログイン後に表示） -->
+  <div class="auth-status" id="authStatus" hidden>
+    <span class="auth-user-id" id="authUserId"></span>
+    <span class="auth-user-name" id="authUserName"></span>
+    <button type="button" class="auth-teacher-btn" id="authTeacherBtn" hidden>🎓 教員モード</button>
+    <button type="button" class="auth-logout-btn" id="authLogoutBtn">ログアウト</button>
+  </div>
+
+  <!-- グローバル設定（全モード共通の表示設定） -->
+  <details class="global-settings" id="globalSettings">
+    <summary class="global-settings-toggle">⚙️ 設定</summary>
+    <div class="global-settings-body">
+      <div class="global-settings-row">
+        <label class="global-settings-label">構造式の表記</label>
+        <div class="global-settings-radio-group" id="formulaStyleRadios">
+          <label><input type="radio" name="formulaStyle" value="skeletal" checked />骨格式（標準）</label>
+          <label><input type="radio" name="formulaStyle" value="condensed" />縮合構造式（高校教科書）</label>
+        </div>
+      </div>
+      <div class="global-settings-row">
+        <label class="global-settings-label">テーマ</label>
+        <div class="global-settings-radio-group" id="themeRadios">
+          <label><input type="radio" name="theme" value="auto" checked />🖥️ システム設定に従う</label>
+          <label><input type="radio" name="theme" value="light" />☀️ ライト</label>
+          <label><input type="radio" name="theme" value="dark" />🌙 ダーク</label>
+        </div>
+      </div>
+      <div class="global-settings-note">
+        ※ 骨格式は H と C 記号を省略した表記、縮合構造式は H を C にまとめた高校教科書スタイル（CH₃-CH₂-OH 等）
+      </div>
+    </div>
+  </details>
+</nav>
+
+<div class="app-shell" data-mode="iupac">
+
+  <!-- ========================= モード選択（5色カード） ========================= -->
+  <section class="mode-strip" aria-label="モード選択">
+    <!-- 「ウォームアップ」と「IUPAC命名法」を統合。表示名はウォームアップ、
+         中身は IUPAC命名法エンジン(view-iupac / 全250題・分野別フィルター)。
+         内部モード名は "iupac" のまま(iupac_mode.js が参照)。 -->
+    <button class="mode-card mode-warmup is-active" data-mode="iupac" type="button">
+      <div class="mode-title">ウォームアップ</div>
+      <div class="mode-desc">構造式・示性式・名称の相互変換を4択で特訓。全250題、分野別フィルター付き。</div>
+    </button>
+    <button class="mode-card mode-retro" data-mode="retro" type="button">
+      <div class="mode-title">逆合成解析</div>
+      <div class="mode-desc">生成物から反応物をパズルのように考える。樹形図ビルダー＋自動反応認識。</div>
+    </button>
+    <button class="mode-card mode-laboratory" data-mode="laboratory" type="button">
+      <div class="mode-title">実験室</div>
+      <div class="mode-desc">出発物質を選び反応を選択。多段階有機合成を自分の手で体験。</div>
+    </button>
+    <button class="mode-card mode-story" data-mode="story" type="button">
+      <div class="mode-title">合成過程クイズ</div>
+      <div class="mode-desc">目標物質を合成せよ。反応カードを選んで正しい経路を見つけよう。</div>
+    </button>
+    <button class="mode-card mode-dict" data-mode="dict" type="button">
+      <div class="mode-title">分子図鑑</div>
+      <div class="mode-desc">全化合物を一覧。名前・分子式・分類で検索。構造式を確認。</div>
+    </button>
+    <!-- 「構造決定問題」モードは非表示（プログラムは残置。再表示するには hidden を外す） -->
+    <button class="mode-card mode-structure" data-mode="structure" type="button" hidden>
+      <div class="mode-title">構造決定問題</div>
+      <div class="mode-desc">大学入試レベルの構造決定問題。実験データから化合物を推理。</div>
+    </button>
+  </section>
+
+  <!-- ========================= クイズ実装エリア ========================= -->
+  <section class="stage" aria-label="クイズエリア">
+
+    <!-- ========== 旧ウォームアップ（IUPAC命名法に統合済み・到達不能／非表示） ========== -->
+    <section class="mode-view" id="view-warmup" data-view="warmup" hidden>
+      <!-- 設定パネル（出題範囲） -->
+      <details class="warmup-settings" id="warmupSettings">
+        <summary class="warmup-settings-toggle">設定（出題範囲）</summary>
+        <div class="warmup-settings-body">
+          <div class="warmup-cat-checks" id="warmupCatChecks">
+            <!-- JS で分類チェックボックスを生成 -->
+          </div>
+          <div class="warmup-settings-actions">
+            <button type="button" class="ghost-btn" id="warmupCatAllBtn">全選択</button>
+            <button type="button" class="ghost-btn" id="warmupCatNoneBtn">全解除</button>
+          </div>
+        </div>
+      </details>
+
+      <div id="warmupPlayArea">
+        <div class="panel-grid">
+          <div class="panel problem-panel" aria-label="問題表示">
+            <div class="panel-head">
+              <h2 class="panel-title">問題</h2>
+              <div class="panel-sub">慣用名 / IUPAC名 / 構造式（ランダム）</div>
+              <button id="warmupStartBtn" class="primary-btn">スタート</button>
+              <div id="warmupTimer" class="panel-sub" hidden>Time: 0.0 s</div>
+              <div id="warmupMessage" class="panel-sub"></div>
+            </div>
+            <div class="warmup-prompt">
+              <div class="problem-text" id="warmupPromptText">ここに問題が表示されます</div>
+            </div>
+            <div class="structure-view structure-view--lg" id="warmupStructureBox" aria-label="構造式表示枠"></div>
+          </div>
+
+          <div class="panel answer-panel" aria-label="回答">
+            <div class="panel-head">
+              <h2 class="panel-title">4択</h2>
+              <div class="panel-sub">直感で選んでOK。すぐ次へ。</div>
+            </div>
+            <div class="choice-grid" id="warmupChoices">
+              <button type="button">A</button>
+              <button type="button">B</button>
+              <button type="button">C</button>
+              <button type="button">D</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <section id="warmupResult" hidden>
+        <h2>結果発表</h2>
+        <p id="warmupResultTime"></p>
+        <p id="warmupResultScore"></p>
+        <table id="warmupResultTable" class="result-table"></table>
+        <button id="warmupResetBtn" class="primary-btn">もう一度チャレンジ</button>
+      </section>
+    </section>
+
+    <!-- ========== ウォームアップ（旧 IUPAC命名法。表示名を統合） ========== -->
+    <section class="mode-view" id="view-iupac" data-view="iupac">
+      <!-- 設定パネル(出題範囲・出題数) -->
+      <details class="warmup-settings" id="iupacSettings">
+        <summary class="warmup-settings-toggle">設定（分野・出題形式・難易度・出題数）</summary>
+        <div class="warmup-settings-body">
+          <div class="iupac-set-group">
+            <div class="iupac-set-label">分野</div>
+            <div class="warmup-cat-checks" id="iupacCatChecks"></div>
+            <div class="warmup-settings-actions">
+              <button type="button" class="ghost-btn" id="iupacCatAllBtn">全選択</button>
+              <button type="button" class="ghost-btn" id="iupacCatNoneBtn">全解除</button>
+            </div>
+          </div>
+          <div class="iupac-set-group">
+            <div class="iupac-set-label">出題形式</div>
+            <div class="warmup-cat-checks" id="iupacTypeChecks"></div>
+          </div>
+          <div class="iupac-set-group">
+            <div class="iupac-set-label">難易度</div>
+            <div class="warmup-cat-checks" id="iupacDiffChecks"></div>
+          </div>
+          <div class="iupac-set-group">
+            <div class="iupac-set-label">出題数</div>
+            <select id="iupacCountSelect" class="iupac-count-select">
+              <option value="5">5 問</option>
+              <option value="10" selected>10 問</option>
+              <option value="20">20 問</option>
+              <option value="50">50 問</option>
+              <option value="all">対象すべて</option>
+            </select>
+            <span class="panel-sub" id="iupacPoolInfo"></span>
+          </div>
+        </div>
+      </details>
+
+      <div id="iupacPlayArea">
+        <div class="panel-grid">
+          <div class="panel problem-panel" aria-label="問題表示">
+            <div class="panel-head">
+              <h2 class="panel-title">問題</h2>
+              <div class="panel-sub" id="iupacProgress"></div>
+              <button id="iupacStartBtn" class="primary-btn">スタート</button>
+              <div id="iupacTimer" class="panel-sub" hidden>Time: 0.0 s</div>
+            </div>
+            <div class="iupac-question-text" id="iupacQuestionText"></div>
+            <div class="iupac-prompt" id="iupacPrompt">「スタート」を押すと問題が表示されます</div>
+          </div>
+
+          <div class="panel answer-panel" aria-label="回答">
+            <div class="panel-head">
+              <h2 class="panel-title">4択</h2>
+              <div class="panel-sub">選択肢は毎回シャッフルされます。</div>
+            </div>
+            <div class="choice-grid" id="iupacChoices">
+              <button type="button" disabled>A</button>
+              <button type="button" disabled>B</button>
+              <button type="button" disabled>C</button>
+              <button type="button" disabled>D</button>
+            </div>
+            <div class="iupac-feedback" id="iupacFeedback" hidden>
+              <div class="iupac-feedback-msg" id="iupacFeedbackMsg"></div>
+              <div class="iupac-expl" id="iupacExpl"></div>
+              <button type="button" class="primary-btn" id="iupacNextBtn">次の問題へ</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <section id="iupacResult" hidden>
+        <h2>結果発表</h2>
+        <p id="iupacResultTime"></p>
+        <p id="iupacResultScore"></p>
+        <table id="iupacResultTable" class="result-table"></table>
+        <button id="iupacResetBtn" class="primary-btn">もう一度チャレンジ</button>
+      </section>
+    </section>
+
+    <!-- 旧「構造決定クイズ」モード (mode="standard") は削除されました。
+         逆合成解析モード (mode="retro") に置き換え。 -->
+
+    <!-- ========== 合成パズル（ミステリーストーリー） ========== -->
+    <section class="mode-view" id="view-story" data-view="story" hidden>
+      <div class="story-layout">
+        <div class="panel story-puzzle-nav" aria-label="パズルナビ">
+          <div class="puzzle-nav-inner">
+            <button type="button" class="ghost-btn" id="storyPrevBtn">◀ 前へ</button>
+            <span id="storyPuzzleCounter"></span>
+            <button type="button" class="ghost-btn" id="storyNextBtn">次へ ▶</button>
+            <h2 class="puzzle-title" id="storyPuzzleTitle"></h2>
+            <span class="panel-sub" id="storyPuzzleHint"></span>
+          </div>
+        </div>
+        <div class="panel story-target-panel" aria-label="目標物質">
+          <div class="panel-head">
+            <h2 class="panel-title">目標物質</h2>
+          </div>
+          <div class="target-name" id="storyTargetName"></div>
+          <div class="structure-view structure-view--target" id="storyTargetStructure"></div>
+          <div class="target-meta panel-sub" id="storyPuzzleDesc"></div>
+        </div>
+        <div class="panel story-chain-panel" aria-label="反応式チェーン">
+          <div class="panel-head">
+            <h2 class="panel-title">反応の流れ</h2>
+            <div class="panel-sub story-chain-controls">
+              <button type="button" class="ghost-btn" id="storyUndoBtn">1手戻す</button>
+              <button type="button" class="ghost-btn" id="storyResetBtn">リセット</button>
+            </div>
+          </div>
+          <div class="chain-view" id="storyChainView" aria-live="polite"></div>
+          <div class="story-feedback" id="storyFeedback" hidden></div>
+          <div class="story-success" id="storySuccess" hidden>
+            <div class="success-title">合成完了！</div>
+            <div class="success-desc" id="storySuccessDesc"></div>
+          </div>
+        </div>
+        <div class="panel story-reaction-panel" aria-label="反応カード">
+          <div class="panel-head">
+            <h2 class="panel-title">反応カード</h2>
+            <div class="panel-sub" id="storyCurrentMolLabel"></div>
+          </div>
+          <div class="reaction-card-grid" id="storyReactionCards"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ========== 分子図鑑 ========== -->
+    <section class="mode-view" id="view-dict" data-view="dict" hidden>
+      <div class="dict-layout">
+        <div class="panel dict-search-panel">
+          <div class="panel-head">
+            <h2 class="panel-title">分子図鑑</h2>
+            <div class="panel-sub">全化合物の構造式・性質を一覧。</div>
+          </div>
+          <div class="dict-search-row">
+            <input type="text" id="dictSearchInput" class="dict-search-input" placeholder="名前・分子式・分類で検索..." autocomplete="off" />
+            <div class="dict-sort-control">
+              <label for="dictSortSelect" class="dict-sort-label">並び順</label>
+              <select id="dictSortSelect" class="dict-sort-select">
+                <option value="name-asc">五十音順（あ → ん）</option>
+                <option value="name-desc">五十音順（ん → あ）</option>
+                <option value="mw-asc">分子量（小 → 大）</option>
+                <option value="mw-desc">分子量（大 → 小）</option>
+              </select>
+            </div>
+            <div class="dict-filter-chips" id="dictFilterChips"></div>
+          </div>
+        </div>
+        <div class="dict-grid" id="dictGrid"></div>
+      </div>
+
+      <!-- ========== 分子詳細モーダル ========== -->
+      <div class="dict-detail-modal" id="dictDetailModal" hidden aria-modal="true" role="dialog">
+        <div class="dict-detail-backdrop" id="dictDetailBackdrop"></div>
+        <div class="dict-detail-content">
+          <div class="dict-detail-head">
+            <h2 class="dict-detail-title" id="dictDetailTitle">分子の詳細</h2>
+            <button type="button" class="dict-detail-close-btn" id="dictDetailCloseBtn" aria-label="閉じる">×</button>
+          </div>
+          <div class="dict-detail-body" id="dictDetailBody">
+            <!-- JS で動的に内容を挿入 -->
+          </div>
+          <div class="dict-detail-foot">
+            <button type="button" class="primary-btn" id="dictDetailHideBtn">閉じる</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ========== 実験室 ========== -->
+    <section class="mode-view" id="view-laboratory" data-view="laboratory" hidden>
+      <div class="lab-layout">
+
+        <!-- ── ツールバー ────────────────────────────────── -->
+        <div class="panel lab-toolbar">
+          <div class="lab-toolbar-left">
+            <button class="primary-btn lab-primary-btn" id="labSelectStartBtn" type="button">
+              出発物質を選択
+            </button>
+            <div class="lab-coreact-row" id="labCoReactRow">
+              <span class="lab-coreact-label">共反応物：</span>
+              <button class="lab-coreact-selected-btn" id="labCoReactSelectedBtn" type="button">
+                なし
+              </button>
+              <button class="lab-coreact-clear-btn" id="labCoReactClearBtn" type="button" hidden title="共反応物をクリア">✕</button>
+            </div>
+          </div>
+          <div class="lab-toolbar-right">
+            <span class="lab-current-label" id="labCurrentLabel">出発物質を選んでください</span>
+            <button class="ghost-btn" id="labExportChainBtn" type="button" title="合成経路を画像として保存">📸 画像保存</button>
+            <button class="ghost-btn" id="labUndoBtn" type="button" disabled>◀ 1手戻す</button>
+            <button class="ghost-btn" id="labResetBtn" type="button">リセット</button>
+          </div>
+        </div>
+
+        <!-- ── トラック切替タブ（二重合成経路機能 Phase 2） ─── -->
+        <div class="lab-track-tabs" id="labTrackTabs">
+          <!-- JS で動的生成: [経路 1] [経路 2] [+ 新規] -->
+        </div>
+
+        <!-- ── 合成経路（横スクロール） ──────────────────── -->
+        <div class="panel lab-chain-panel">
+          <div class="lab-chain-track" id="labChainTrack">
+            <span class="lab-chain-empty" id="labChainEmpty">
+              出発物質を選択すると合成経路がここに表示されます
+            </span>
+          </div>
+        </div>
+
+        <!-- ── メインエリア ───────────────────────────────── -->
+        <div class="lab-main-grid">
+
+          <!-- 現在の分子 -->
+          <div class="panel lab-mol-panel">
+            <div class="lab-panel-title">現在の分子</div>
+            <div class="lab-mol-name" id="labMolName">—</div>
+            <div class="lab-mol-formula" id="labMolFormula"></div>
+            <div class="structure-view structure-view--lab" id="labMolStructure">
+              <span class="lab-struct-placeholder">構造式</span>
+            </div>
+            <!-- EAS 反応マップ（芳香環があるときのみ表示） -->
+            <div class="lab-eas-map" id="labEasMap" hidden>
+              <div class="lab-eas-map-title">⚡ EAS 反応マップ</div>
+              <div class="lab-eas-map-body">
+                <svg class="lab-eas-hex-svg" id="labEasHexSvg" viewBox="0 0 200 180"
+                     xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                  <!-- JS generated -->
+                </svg>
+                <div class="lab-eas-legend" id="labEasLegend">
+                  <!-- JS generated -->
+                </div>
+              </div>
+            </div>
+
+            <!-- 主生成物/副生成物 切り替えボタン行（いずれかの選択時のみ表示） -->
+            <div class="lab-prod-switch-row">
+              <button class="lab-byprod-trigger-btn" id="labByProductTriggerBtn" hidden type="button">副生成物</button>
+              <button class="lab-mainprod-btn" id="labMainProductBtn" hidden type="button">主生成物に切り替え</button>
+            </div>
+
+            <!-- 検出反応結果エリア（Phase4で本格活用） -->
+            <div class="lab-detection-box" id="labDetectionBox" hidden>
+              <div class="lab-detection-title" id="labDetectionTitle">🔬 検出反応結果</div>
+              <div class="lab-detection-text" id="labDetectionText"></div>
+              <div class="lab-detection-note">※ 検出反応のため合成連鎖はここで終了します。「1手戻す」で別の反応を試せます。</div>
+            </div>
+            <!-- 反応不成立メッセージ -->
+            <div class="lab-no-rxn-box" id="labNoRxnBox" hidden>
+              <div class="lab-no-rxn-text" id="labNoRxnText">反応はうまく進みません。</div>
+            </div>
+            <!-- 副生成物ピッカー -->
+            <div class="lab-byprod-picker" id="labByProductPicker" hidden>
+              <div class="lab-byprod-picker-head">
+                <span class="lab-byprod-picker-label">副生成物を選択して適用</span>
+                <button class="ghost-btn" id="labByProductCancelBtn" type="button">閉じる</button>
+              </div>
+              <div class="lab-byprod-mol-grid" id="labByProductMolGrid">
+                <!-- JS generated -->
+              </div>
+            </div>
+          </div>
+
+          <!-- 反応選択パネル -->
+          <div class="panel lab-rxn-panel">
+            <div class="lab-panel-title">反応を選択</div>
+
+            <!-- カテゴリタブ -->
+            <div class="lab-cat-tabs" id="labCatTabs">
+              <!-- JS generated -->
+            </div>
+
+            <!-- 反応ボタングリッド -->
+            <div class="lab-rxn-grid" id="labRxnGrid">
+              <span class="lab-rxn-placeholder">カテゴリを選択してください</span>
+            </div>
+
+            <!-- 共反応物ピッカー（反応選択後に表示） -->
+            <div class="lab-coreact-picker" id="labCoreactPicker" hidden>
+              <div class="lab-coreact-picker-head">
+                <span id="labCoreactPickerLabel">共反応物を選択してください</span>
+                <button class="ghost-btn lab-coreact-cancel-btn" id="labCoreactCancelBtn" type="button">キャンセル</button>
+              </div>
+              <div class="lab-coreact-mol-grid" id="labCoreactMolGrid">
+                <!-- JS generated -->
+              </div>
+              <!-- 検索 / SMILES直接入力 -->
+              <div class="lab-coreact-search-row">
+                <input type="text" class="lab-mol-search lab-coreact-search-input" id="labCoreactSearch"
+                       placeholder="名前またはSMILESを直接入力..." autocomplete="off" />
+                <button class="primary-btn lab-coreact-smiles-btn" id="labCoreactSmilesBtn" type="button">この分子を使う</button>
+              </div>
+              <!-- JSME描画オプション -->
+              <details class="lab-coreact-draw-details">
+                <summary class="lab-coreact-draw-summary">✏ 構造式を描いて選ぶ</summary>
+                <div id="labCoreactJsmeContainer" style="width:100%;height:280px;margin-top:8px;"></div>
+                <button class="primary-btn lab-coreact-draw-confirm-btn" id="labCoreactDrawConfirmBtn" type="button">この分子を共反応物に使う</button>
+              </details>
+            </div>
+          </div>
+
+        </div><!-- /.lab-main-grid -->
+      </div><!-- /.lab-layout -->
+
+      <!-- ── 出発物質選択モーダル ────────────────────────── -->
+      <div class="lab-overlay" id="labOverlay" hidden>
+        <div class="lab-modal">
+
+          <div class="lab-modal-head">
+            <h3 class="lab-modal-title">出発物質を選択</h3>
+            <button class="lab-modal-close" id="labModalCloseBtn" type="button" aria-label="閉じる">✕</button>
+          </div>
+
+          <!-- タブ切替 -->
+          <div class="lab-modal-tabs">
+            <button class="lab-modal-tab is-active" id="labTabList" type="button" data-tab="list">一覧から選ぶ</button>
+            <button class="lab-modal-tab" id="labTabDraw" type="button" data-tab="draw">✏ 構造式を描く</button>
+          </div>
+
+          <div class="lab-modal-body">
+            <!-- ── 一覧タブ ── -->
+            <div id="labPanelList">
+              <div class="lab-modal-section-label" id="labQuickMolLabel">よく使う化合物</div>
+              <div class="lab-quick-mol-btns" id="labMolQuickGrid">
+                <!-- JS generated -->
+              </div>
+              <div class="lab-modal-section-label lab-modal-section-search-label">その他を検索</div>
+              <div class="lab-search-wrapper">
+                <input type="text" class="lab-mol-search" id="labMolSearch"
+                       placeholder="名前を入力（例: アセトン）..." autocomplete="off" />
+                <div class="lab-search-suggestions" id="labSearchSuggestions" hidden>
+                  <!-- JS generated -->
+                </div>
+              </div>
+            </div>
+
+            <!-- ── 描画タブ ── -->
+            <div id="labPanelDraw" hidden>
+              <div class="lab-draw-hint">構造式を描いてください。完成したら「この分子を使う」を押してください。</div>
+              <div id="labJsmeContainer" style="width:100%;height:340px;"></div>
+            </div>
+          </div>
+
+          <div class="lab-modal-footer">
+            <span class="lab-modal-selected-label" id="labModalSelectedLabel">未選択</span>
+            <button class="primary-btn lab-confirm-mol-btn" id="labConfirmMolBtn"
+                    type="button" disabled>決定</button>
+            <button class="primary-btn lab-confirm-draw-btn" id="labConfirmDrawBtn"
+                    type="button" hidden>この分子を使う</button>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- ========== 反応説明モーダル ========== -->
+      <div class="lab-expl-modal" id="labExplModal" hidden aria-modal="true" role="dialog">
+        <div class="lab-expl-backdrop" id="labExplBackdrop"></div>
+        <div class="lab-expl-content">
+          <div class="lab-expl-head">
+            <h2 class="lab-expl-title" id="labExplTitle">反応の説明</h2>
+            <button type="button" class="lab-expl-close-btn" id="labExplCloseBtn" aria-label="閉じる">×</button>
+          </div>
+          <div class="lab-expl-body" id="labExplBody">
+            <!-- JS で動的に内容を挿入 -->
+          </div>
+          <div class="lab-expl-foot">
+            <button type="button" class="primary-btn" id="labExplHideBtn">閉じる</button>
+          </div>
+        </div>
+      </div>
+
+    </section>
+
+    <!-- ========== 構造決定問題 ========== -->
+    <section class="mode-view" id="view-structure" data-view="structure" hidden>
+      <div class="sp-layout">
+
+        <!-- 問題文 -->
+        <div class="sp-col">
+          <div class="sp-col-head">
+            <h2>実験データ</h2>
+            <p class="sp-col-subtitle">下線付き語句をクリックすると解法ポイントが表示されます</p>
+          </div>
+          <div class="sp-col-body" id="spProblemBody">
+            <!-- JS generated -->
+          </div>
+        </div>
+
+        <!-- 設問 -->
+        <div class="sp-col">
+          <div class="sp-col-head">
+            <h2>設問（問１〜問１２）</h2>
+            <p class="sp-col-subtitle">ヒントを順に表示しながら解いてみよう</p>
+          </div>
+          <div class="sp-col-body" id="spQuestionsList">
+            <!-- JS generated -->
+          </div>
+        </div>
+
+      </div>
+
+      <!-- インサイトポップアップ -->
+      <div class="sp-popup-overlay" id="spPopupOverlay">
+        <div class="sp-popup-box">
+          <button class="sp-popup-close" id="spPopupClose" type="button" aria-label="閉じる">✕</button>
+          <div class="sp-popup-phrase" id="spPopupPhrase"></div>
+          <div class="sp-popup-insight" id="spPopupInsight"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ========== 逆合成解析 ========== -->
+    <section class="mode-view" id="view-retro" data-view="retro" hidden>
+      <div class="retro-layout">
+        <!-- 上部ツールバー: ターゲット選択 + 操作 -->
+        <div class="retro-toolbar">
+          <label class="retro-target-label">
+            ターゲット分子:
+            <input type="text" id="retroTargetSearch" class="retro-target-search"
+                   list="retroTargetDataList"
+                   placeholder="分子名・式で検索（分子図鑑から自由選択）"
+                   autocomplete="off" />
+            <datalist id="retroTargetDataList"></datalist>
+          </label>
+          <button type="button" id="retroUndoBtn" class="ghost-btn" title="一つ前の状態に戻す" disabled>↶ 戻る</button>
+          <button type="button" id="retroRedoBtn" class="ghost-btn" title="一つ先の状態に進む" disabled>↷ 進む</button>
+          <button type="button" id="retroResetBtn" class="ghost-btn">🔄 リセット</button>
+          <button type="button" id="retroHintBtn" class="ghost-btn">💡 ヒント</button>
+          <button type="button" id="retroAlignBtn" class="ghost-btn">📐 整列</button>
+          <button type="button" id="retroCheckBtn" class="ghost-btn">✅ 完成判定</button>
+          <div class="retro-status" id="retroStatus"></div>
+        </div>
+
+        <!-- クイック選択チップ: 代表的なターゲット分子 -->
+        <div class="retro-quick-targets" id="retroQuickTargets">
+          <span class="retro-quick-label">おすすめ:</span>
+          <!-- JS で生成 -->
+        </div>
+
+        <!-- メインキャンバス: 樹形図描画エリア -->
+        <div class="retro-canvas-wrap">
+          <svg id="retroCanvas" class="retro-canvas" xmlns="http://www.w3.org/2000/svg">
+            <!-- 矢印マーカー定義 -->
+            <defs>
+              <marker id="retroArrowHead" viewBox="0 0 10 10" refX="9" refY="5"
+                      markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+                <path d="M 0 0 L 10 5 L 0 10 Z" fill="#444"/>
+              </marker>
+            </defs>
+            <g id="retroEdges"></g>
+            <g id="retroNodes"></g>
+          </svg>
+        </div>
+
+        <!-- 下部: 検索パネル（物質 / 反応 タブ切替） -->
+        <div class="retro-search-panel">
+          <div class="retro-search-tabs">
+            <button type="button" class="retro-tab is-active" data-retro-tab="molecules">分子カード</button>
+            <button type="button" class="retro-tab" data-retro-tab="reactions">反応カード</button>
+          </div>
+          <div class="retro-search-bar">
+            <input type="text" id="retroSearchInput" placeholder="🔍 名前・式・SMILES で検索" />
+          </div>
+          <div class="retro-card-rail" id="retroCardRail">
+            <!-- JS でカードを動的生成 -->
+          </div>
+        </div>
+      </div>
+    </section>
+
+  </section>
+</div>
+
+<!-- ========================= 教員モード（タブ切替） ========================= -->
+<section class="teacher-shell" id="teacherShell" hidden aria-label="教員モード">
+  <div class="teacher-head">
+    <h1 class="teacher-title">🎓 教員モード</h1>
+    <button type="button" class="teacher-close-btn" id="teacherCloseBtn">通常モードに戻る</button>
+  </div>
+  <nav class="teacher-tabs" id="teacherTabs">
+    <button type="button" class="teacher-tab is-active" data-tab="roster">名簿管理</button>
+    <button type="button" class="teacher-tab" data-tab="logs">ログ閲覧</button>
+    <button type="button" class="teacher-tab" data-tab="stats">集計</button>
+    <button type="button" class="teacher-tab" data-tab="export">エクスポート</button>
+  </nav>
+  <div class="teacher-body">
+    <!-- 名簿管理タブ -->
+    <div class="teacher-pane is-active" data-pane="roster">
+      <div class="roster-toolbar">
+        <button type="button" class="primary-btn" id="rosterAddBtn">+ 生徒を追加</button>
+        <button type="button" class="primary-btn" id="rosterAddTeacherBtn">+ 教員を追加</button>
+        <button type="button" class="ghost-btn" id="rosterImportCsvBtn">📤 CSV 取込</button>
+        <button type="button" class="ghost-btn" id="rosterExportCsvBtn">📥 CSV 書出</button>
+        <input type="file" id="rosterCsvFile" accept=".csv,text/csv" hidden />
+        <span class="roster-count" id="rosterCount"></span>
+      </div>
+      <div class="roster-csv-hint">
+        CSV形式: <code>grade,class,number,name,initial</code>（ヘッダ行必須）
+      </div>
+      <table class="roster-table" id="rosterTable">
+        <thead>
+          <tr><th>ID</th><th>学年</th><th>組</th><th>番号</th><th>氏名</th><th>イニシャル</th><th>区分</th><th>操作</th></tr>
+        </thead>
+        <tbody id="rosterTbody"></tbody>
+      </table>
+    </div>
+
+    <!-- ログ閲覧タブ -->
+    <div class="teacher-pane" data-pane="logs">
+      <div class="logs-toolbar">
+        <label>生徒
+          <select id="logsFilterStudent"><option value="">全生徒</option></select>
+        </label>
+        <label>モード
+          <select id="logsFilterMode">
+            <option value="">全モード</option>
+            <option value="iupac">ウォームアップ</option>
+            <option value="retro">逆合成解析</option>
+            <option value="laboratory">実験室</option>
+            <option value="dict">分子図鑑</option>
+            <option value="story">合成過程クイズ</option>
+            <option value="structure">構造決定問題</option>
+          </select>
+        </label>
+        <label>開始 <input type="date" id="logsFilterFrom" /></label>
+        <label>終了 <input type="date" id="logsFilterTo" /></label>
+        <button type="button" class="primary-btn" id="logsRefreshBtn">🔍 検索</button>
+        <span class="logs-count" id="logsCount"></span>
+      </div>
+      <table class="logs-table">
+        <thead>
+          <tr><th>開始時刻</th><th>生徒</th><th>滞在</th><th>モード</th><th>正答数/問</th><th>終了</th><th></th></tr>
+        </thead>
+        <tbody id="logsTbody"></tbody>
+      </table>
+      <div class="logs-detail" id="logsDetail" hidden>
+        <div class="logs-detail-head">
+          <h3 class="logs-detail-title" id="logsDetailTitle">セッション詳細</h3>
+          <button type="button" class="ghost-btn" id="logsDetailCloseBtn">閉じる</button>
+        </div>
+        <table class="logs-events-table">
+          <thead>
+            <tr><th>時刻</th><th>種別</th><th>内容</th></tr>
+          </thead>
+          <tbody id="logsEventsTbody"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- 集計タブ -->
+    <div class="teacher-pane" data-pane="stats">
+      <div class="stats-section">
+        <h3 class="stats-title">📊 累計使用時間 ランキング</h3>
+        <table class="stats-table" id="statsRankTable">
+          <thead><tr><th>順位</th><th>ID</th><th>氏名</th><th>累計時間</th><th>セッション数</th><th>最終利用</th></tr></thead>
+          <tbody></tbody>
+        </table>
+      </div>
+      <div class="stats-section">
+        <h3 class="stats-title">🎯 ラベル別 正答率（全生徒平均）</h3>
+        <table class="stats-table" id="statsLabelTable">
+          <thead><tr><th>ラベル</th><th>出題数</th><th>正解数</th><th>正答率</th></tr></thead>
+          <tbody></tbody>
+        </table>
+      </div>
+      <div class="stats-section">
+        <h3 class="stats-title">⚠ 弱点ラベル（正答率 50% 未満、出題 5 問以上）</h3>
+        <table class="stats-table" id="statsWeakTable">
+          <thead><tr><th>ラベル</th><th>正答率</th><th>出題数</th></tr></thead>
+          <tbody></tbody>
+        </table>
+      </div>
+      <div class="stats-section">
+        <h3 class="stats-title">📖 分子図鑑 閲覧ランキング</h3>
+        <table class="stats-table" id="statsDictTable">
+          <thead><tr><th>順位</th><th>分子</th><th>閲覧数</th></tr></thead>
+          <tbody></tbody>
+        </table>
+      </div>
+      <button type="button" class="primary-btn" id="statsRefreshBtn">🔄 集計更新</button>
+    </div>
+
+    <!-- エクスポートタブ -->
+    <div class="teacher-pane" data-pane="export">
+      <div class="export-section">
+        <h3 class="stats-title">📥 データ書き出し</h3>
+        <div class="export-row">
+          <label>対象
+            <select id="exportTarget">
+              <option value="all">全生徒</option>
+              <option value="student">特定の生徒...</option>
+            </select>
+          </label>
+          <label>生徒
+            <select id="exportStudent" disabled></select>
+          </label>
+          <label>形式
+            <select id="exportFormat">
+              <option value="json">JSON（イベント込み完全版）</option>
+              <option value="csv-summary">CSV（セッションサマリ）</option>
+              <option value="csv-events">CSV（イベント詳細）</option>
+              <option value="csv-profiles">CSV（累計プロファイル）</option>
+            </select>
+          </label>
+          <button type="button" class="primary-btn" id="exportRunBtn">ダウンロード</button>
+        </div>
+      </div>
+      <div class="export-section danger-section">
+        <h3 class="stats-title">⚠ ログ削除（取り消し不可）</h3>
+        <div class="export-row">
+          <button type="button" class="danger-btn" id="delStudentLogsBtn">特定生徒の全ログ削除...</button>
+          <button type="button" class="danger-btn" id="delAllLogsBtn">全生徒のログを削除（名簿・累計プロファイルは維持）</button>
+          <button type="button" class="danger-btn" id="wipeAllBtn">全データ初期化（名簿・PIN含む全削除）</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ========================= ログイン オーバーレイ ========================= -->
+<div class="login-overlay" id="loginOverlay" role="dialog" aria-modal="true" aria-label="ログイン">
+  <div class="login-box">
+    <h1 class="login-title">有機化学クイズ</h1>
+    <p class="login-subtitle">ID を入力してログイン</p>
+
+    <div class="login-row">
+      <label for="loginIdInput" class="login-label">生徒ID / 教員ID</label>
+      <input type="text" id="loginIdInput" class="login-input" maxlength="5"
+             placeholder="例: 2315H" autocomplete="off" inputmode="text" />
+    </div>
+
+    <div class="login-row" id="loginPinRow" hidden>
+      <label for="loginPinInput" class="login-label">PIN（6桁）</label>
+      <input type="password" id="loginPinInput" class="login-input" maxlength="6"
+             placeholder="6桁の数字" autocomplete="off" inputmode="numeric" />
+    </div>
+
+    <div class="login-error" id="loginError" hidden></div>
+
+    <button type="button" class="login-submit-btn" id="loginSubmitBtn">ログイン</button>
+
+    <p class="login-hint">未登録の場合は教員にIDを発行してもらってください。<br>
+       全角/半角・大文字/小文字どちらでも入力できます。</p>
+
+    <button type="button" class="login-bootstrap-btn" id="loginBootstrapBtn" hidden>
+      初期設定：最初の教員アカウントを作成
+    </button>
+  </div>
+</div>
+
+<!-- ========================= 初期設定モーダル（最初の教員作成用） ========================= -->
+<div class="bootstrap-overlay" id="bootstrapOverlay" hidden role="dialog" aria-modal="true">
+  <div class="bootstrap-box">
+    <h2 class="bootstrap-title">初期設定：教員アカウントを作成</h2>
+    <p class="bootstrap-desc">この PC でクイズを使うために、最初の教員アカウントを作成してください。<br>
+       PIN はこの教員アカウントでログインするときに必要です。</p>
+
+    <div class="bootstrap-row">
+      <label for="bsTeacherNumber" class="bootstrap-label">教員番号（01-99）</label>
+      <input type="number" id="bsTeacherNumber" min="1" max="99" value="1" class="bootstrap-input" />
+    </div>
+    <div class="bootstrap-row">
+      <label for="bsTeacherInitial" class="bootstrap-label">イニシャル（A-Z 1文字）</label>
+      <input type="text" id="bsTeacherInitial" maxlength="1" class="bootstrap-input" placeholder="例: T" />
+    </div>
+    <div class="bootstrap-row">
+      <label for="bsTeacherName" class="bootstrap-label">氏名</label>
+      <input type="text" id="bsTeacherName" class="bootstrap-input" placeholder="例: 教員 太郎" />
+    </div>
+    <div class="bootstrap-row">
+      <label class="bootstrap-label">生成される教員ID</label>
+      <div class="bootstrap-id-preview" id="bsIdPreview">9001T</div>
+    </div>
+    <div class="bootstrap-row">
+      <label for="bsPin1" class="bootstrap-label">PIN（6桁）</label>
+      <input type="password" id="bsPin1" maxlength="6" inputmode="numeric" class="bootstrap-input" />
+    </div>
+    <div class="bootstrap-row">
+      <label for="bsPin2" class="bootstrap-label">PIN 確認</label>
+      <input type="password" id="bsPin2" maxlength="6" inputmode="numeric" class="bootstrap-input" />
+    </div>
+    <div class="bootstrap-error" id="bsError" hidden></div>
+    <div class="bootstrap-actions">
+      <button type="button" class="ghost-btn" id="bsCancelBtn">キャンセル</button>
+      <button type="button" class="primary-btn" id="bsSubmitBtn">作成してログイン画面へ</button>
+    </div>
+  </div>
+</div>
+
+<!-- ========================= 名簿追加/編集モーダル ========================= -->
+<div class="roster-edit-overlay" id="rosterEditOverlay" hidden role="dialog" aria-modal="true">
+  <div class="roster-edit-box">
+    <h2 class="roster-edit-title" id="rosterEditTitle">生徒を追加</h2>
+    <input type="hidden" id="reOriginalId" />
+    <input type="hidden" id="reRole" value="student" />
+    <div class="roster-edit-row">
+      <label class="roster-edit-label">学年</label>
+      <input type="number" id="reGrade" min="1" max="9" class="roster-edit-input" />
+    </div>
+    <div class="roster-edit-row">
+      <label class="roster-edit-label">組</label>
+      <input type="number" id="reClass" min="0" max="9" class="roster-edit-input" />
+    </div>
+    <div class="roster-edit-row">
+      <label class="roster-edit-label">番号（01-99）</label>
+      <input type="number" id="reNumber" min="1" max="99" class="roster-edit-input" />
+    </div>
+    <div class="roster-edit-row">
+      <label class="roster-edit-label">氏名</label>
+      <input type="text" id="reName" class="roster-edit-input" placeholder="例: 杉山 光" />
+    </div>
+    <div class="roster-edit-row">
+      <label class="roster-edit-label">イニシャル（A-Z 1文字）</label>
+      <input type="text" id="reInitial" maxlength="1" class="roster-edit-input" placeholder="H" />
+    </div>
+    <div class="roster-edit-row">
+      <label class="roster-edit-label">生成される ID</label>
+      <div class="roster-edit-preview" id="rePreview">—</div>
+    </div>
+    <div class="roster-edit-row" id="rePinRow" hidden>
+      <label class="roster-edit-label">PIN（6桁、教員のみ）</label>
+      <input type="password" id="rePin" maxlength="6" inputmode="numeric" class="roster-edit-input" />
+      <p class="roster-edit-pin-note">空欄なら現在のPINを維持します（編集時）</p>
+    </div>
+    <div class="roster-edit-error" id="reError" hidden></div>
+    <div class="roster-edit-actions">
+      <button type="button" class="ghost-btn" id="reCancelBtn">キャンセル</button>
+      <button type="button" class="primary-btn" id="reSubmitBtn">保存</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  // JSME (GWT) ロード完了コールバック
+  function jsmeOnLoad() { window._jsmeReady = true; }
+</script>
+<!-- オフライン動作のためローカル同梱（lib/）。外部CDNには依存しない。 -->
+<script src="lib/rdkit/RDKit_minimal.js"></script>
+<!-- 3Dmol.js: 3D 分子表示用（教育用 UI、軽量、BSDライセンス）-->
+<script src="lib/3dmol/3Dmol-min.js"></script>
+<script src="lib/jsme/jsme.nocache.js"></script>
+<script src="storage.js"></script>
+<script src="auth.js"></script>
+<script src="roster_seed.js"></script>
+<script src="logger.js"></script>
+<script src="molecules_svg.js"></script>
+<script src="moleculeSMILES.js"></script>
+<script src="reactions.js"></script>
+<script src="reactionExplanations.js"></script>
+<script src="chem_engine.js"></script>
+<script src="structure_problems.js"></script>
+<script src="structure_mode.js"></script>
+<script src="iupac_quiz_data.js"></script>
+<script src="iupac_quiz_data2.js"></script>
+<script src="iupac_quiz_data3.js"></script>
+<script src="dict_enrichment.js"></script>
+<script src="js/mol3d.js"></script>
+<script src="app.js"></script>
+<script src="iupac_mode.js"></script>
+<script src="teacher_ui.js"></script>
+<script src="auth_ui.js"></script>
+</body>
+</html>

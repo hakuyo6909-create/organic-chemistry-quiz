@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<title>分子3Dビューア デモ (Phase 1-7)</title>
+<script type="importmap">
+{
+  "imports": {
+    "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+    "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
+  }
+}
+</script>
+<style>
+  html, body { margin: 0; padding: 0; height: 100%; font-family: system-ui, sans-serif; background: #f6f7fb; color: #222; }
+  header { padding: 10px 16px; border-bottom: 1px solid #ddd; background: #fff; display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
+  header h1 { font-size: 14px; margin: 0; }
+  .group { display: inline-flex; gap: 4px; padding: 2px 6px; border: 1px solid #eee; border-radius: 4px; }
+  .group .label { font-size: 11px; color: #888; align-self: center; padding-right: 4px; }
+  .group button { padding: 4px 8px; border: 1px solid #bbb; background: #fff; cursor: pointer; border-radius: 3px; font-size: 12px; }
+  .group button.active { background: #2b6cb0; color: #fff; border-color: #2b6cb0; }
+  .info { font-size: 11px; color: #555; margin-left: auto; }
+  #viewer { width: 100%; height: calc(100% - 64px); }
+  #log { position: fixed; right: 12px; bottom: 12px; background: rgba(255,255,255,0.94); border: 1px solid #ccc; padding: 8px 12px; font-size: 11px; max-width: 380px; max-height: 280px; overflow: auto; border-radius: 4px; }
+  #log h4 { margin: 0 0 4px; font-size: 12px; }
+  #log table { font-size: 11px; border-collapse: collapse; width: 100%; }
+  #log td { padding: 1px 6px; border-bottom: 1px solid #eee; }
+  #log td:first-child { color: #666; }
+</style>
+</head>
+<body>
+<header>
+  <h1>分子3Dビューア — Phase 1-7</h1>
+  <label style="font-size:12px; color:#555;">
+    <input type="checkbox" id="opt-toggle" checked> UFF 最適化
+  </label>
+  <div class="group" id="phase1">
+    <span class="label">Phase 1</span>
+    <button data-s="C" class="active">CH₄</button>
+    <button data-s="CC">C₂H₆</button>
+    <button data-s="CCCC">C₄H₁₀</button>
+    <button data-s="CCCCC">C₅H₁₂</button>
+  </div>
+  <div class="group" id="phase2">
+    <span class="label">Phase 2</span>
+    <button data-s="C=C">C₂H₄</button>
+    <button data-s="C#C">C₂H₂</button>
+    <button data-s="C=O">HCHO</button>
+    <button data-s="C#N">HCN</button>
+    <button data-s="O=C=O">CO₂</button>
+    <button data-s="C=C=C">アレン</button>
+  </div>
+  <div class="group" id="phase3">
+    <span class="label">Phase 3</span>
+    <button data-s="CO">CH₃OH</button>
+    <button data-s="CCO">C₂H₅OH</button>
+    <button data-s="CN">CH₃NH₂</button>
+    <button data-s="CCl">CH₃Cl</button>
+    <button data-s="CC=O">CH₃CHO</button>
+    <button data-s="CC(=O)C">アセトン</button>
+    <button data-s="COC">CH₃OCH₃</button>
+    <button data-s="CC(=O)O">CH₃COOH</button>
+    <button data-s="CC(=O)OC">CH₃COOCH₃</button>
+  </div>
+  <div class="group" id="phase4">
+    <span class="label">Phase 4 (環)</span>
+    <button data-s="C1CC1">C₃H₆</button>
+    <button data-s="C1CCC1">C₄H₈</button>
+    <button data-s="C1CCCC1">C₅H₁₀</button>
+    <button data-s="C1CCCCC1">C₆H₁₂</button>
+    <button data-s="c1ccccc1">C₆H₆</button>
+    <button data-s="n1ccccc1">ピリジン</button>
+    <button data-s="c1ccoc1">フラン</button>
+    <button data-s="c1cc[nH]c1">ピロール</button>
+    <button data-s="c1ccc2ccccc2c1">ナフタレン</button>
+    <button data-s="Cc1ccccc1">トルエン</button>
+  </div>
+  <div class="group" id="phase6">
+    <span class="label">Phase 6 (立体)</span>
+    <button data-s="C[C@@H](O)C(=O)O">(R)-乳酸</button>
+    <button data-s="C[C@H](O)C(=O)O">(S)-乳酸</button>
+    <button data-s="C/C=C/C">(E)-2-ブテン</button>
+    <button data-s="C/C=C\C">(Z)-2-ブテン</button>
+  </div>
+  <div class="group" id="phase7">
+    <span class="label">Phase 7 (縮環)</span>
+    <button data-s="c1ccc2[nH]ccc2c1">インドール</button>
+    <button data-s="n1ccc2ccccc2c1">キノリン</button>
+    <button data-s="c1ccc2ncccc2c1">イソキノリン</button>
+  </div>
+  <div class="info">ドラッグで回転 / 右ドラッグ移動 / ホイール拡縮</div>
+</header>
+<div id="viewer"></div>
+<div id="log">
+  <h4>分子情報</h4>
+  <div id="log-body">初期化中…</div>
+</div>
+
+<script type="module">
+import { smilesToMolecule3D, render3DMolecule } from "./src/molecule-3d/index.js";
+
+const viewer = document.getElementById("viewer");
+let renderer = null;
+
+async function show(smiles) {
+  const opt = document.getElementById("opt-toggle")?.checked ?? true;
+  const mol = await smilesToMolecule3D(smiles, { optimize: opt });
+  if (renderer) renderer.dispose();
+  renderer = await render3DMolecule(mol, viewer);
+  describe(smiles, mol);
+}
+
+document.getElementById("opt-toggle").addEventListener("change", () => {
+  const active = document.querySelector("button[data-s].active");
+  if (active) show(active.dataset.s);
+});
+
+function dist(a, b) {
+  return Math.hypot(a.x - b.x, a.y - b.y, a.z - b.z);
+}
+function angleDeg(a, b, c) {
+  const v1 = { x: a.x - b.x, y: a.y - b.y, z: a.z - b.z };
+  const v2 = { x: c.x - b.x, y: c.y - b.y, z: c.z - b.z };
+  const dot = v1.x * v2.x + v1.y * v2.y + v1.z * v2.z;
+  const L1 = Math.hypot(v1.x, v1.y, v1.z);
+  const L2 = Math.hypot(v2.x, v2.y, v2.z);
+  return Math.acos(Math.max(-1, Math.min(1, dot / (L1 * L2)))) * 180 / Math.PI;
+}
+
+function describe(smiles, mol) {
+  const heavies = mol.atoms.filter((a) => a.element !== "H");
+  const formula = computeFormula(mol);
+  const hyb = heavies.map((a) => `${a.element}${a.id}=${a.hybridization}`).join(", ");
+
+  // 結合次数別の長さ
+  const byOrder = { 1: [], 1.5: [], 2: [], 3: [] };
+  for (const b of mol.bonds) {
+    if (mol.atoms[b.a].element === "H" || mol.atoms[b.b].element === "H") continue;
+    const d = dist(mol.atoms[b.a].position, mol.atoms[b.b].position);
+    byOrder[b.order]?.push(d);
+  }
+  const avg = (arr) => arr.length ? (arr.reduce((s, x) => s + x, 0) / arr.length).toFixed(3) : "—";
+
+  // 重原子周りの角度
+  const angles = [];
+  for (const c of heavies) {
+    const nbrs = c.bonds.map((b) => mol.atoms[b.otherId]).filter((a) => a.element !== "H");
+    for (let i = 0; i < nbrs.length; i++) {
+      for (let j = i + 1; j < nbrs.length; j++) {
+        angles.push(angleDeg(nbrs[i].position, c.position, nbrs[j].position));
+      }
+    }
+  }
+  const heavyAngle = angles.length ? `${avg(angles)}°` : "—";
+
+  const aromatic = byOrder[1.5] ?? [];
+  const optInfo = mol.fromCache
+    ? `<tr><td>キャッシュ</td><td>memory hit（最適化スキップ）</td></tr>`
+    : mol.optimization
+    ? `<tr><td>UFF 最適化</td><td>${mol.optimization.iterations} iter, E=${mol.optimization.finalEnergy.toFixed(2)} (init ${mol.optimization.initialEnergy.toFixed(2)})</td></tr>`
+    : `<tr><td>UFF 最適化</td><td>無効</td></tr>`;
+  const stereoInfo = mol.stereo
+    ? `<tr><td>立体検証</td><td>chir: ${mol.stereo.chirality.checked}件 (${mol.stereo.chirality.flipped}件反転), E/Z: ${mol.stereo.stereo.checked}件 (${mol.stereo.stereo.flipped}件回転)</td></tr>`
+    : "";
+  document.getElementById("log-body").innerHTML = `
+    <table>
+      <tr><td>SMILES</td><td>${smiles}</td></tr>
+      <tr><td>分子式</td><td>${formula}</td></tr>
+      <tr><td>原子数</td><td>${mol.atoms.length} (重 ${heavies.length}, H ${mol.atoms.length - heavies.length})</td></tr>
+      <tr><td>混成</td><td>${hyb}</td></tr>
+      <tr><td>単結合 平均</td><td>${avg(byOrder[1])} Å</td></tr>
+      <tr><td>芳香族結合 平均</td><td>${avg(aromatic)} Å</td></tr>
+      <tr><td>二重結合 平均</td><td>${avg(byOrder[2])} Å</td></tr>
+      <tr><td>三重結合 平均</td><td>${avg(byOrder[3])} Å</td></tr>
+      <tr><td>重原子角 平均</td><td>${heavyAngle}</td></tr>
+      ${stereoInfo}
+      ${optInfo}
+    </table>
+  `;
+}
+
+function computeFormula(mol) {
+  const count = {};
+  for (const a of mol.atoms) count[a.element] = (count[a.element] ?? 0) + 1;
+  // Hill 順：C, H, 残りは英字順
+  const order = [];
+  if (count.C) order.push(["C", count.C]);
+  if (count.H) order.push(["H", count.H]);
+  for (const el of Object.keys(count).sort()) {
+    if (el === "C" || el === "H") continue;
+    order.push([el, count[el]]);
+  }
+  return order.map(([e, n]) => n === 1 ? e : `${e}${toSub(n)}`).join("");
+}
+function toSub(n) {
+  return String(n).split("").map((d) => "₀₁₂₃₄₅₆₇₈₉"[+d]).join("");
+}
+
+for (const btn of document.querySelectorAll("button[data-s]")) {
+  btn.addEventListener("click", () => {
+    document.querySelectorAll("button[data-s]").forEach((b) => b.classList.toggle("active", b === btn));
+    show(btn.dataset.s);
+  });
+}
+
+show("C");
+</script>
+</body>
+</html>
