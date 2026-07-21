@@ -14432,7 +14432,7 @@
     node.innerHTML = `
       <div class="lab-cn-svg">${svgHtml || '<span style="color:#ccc;font-size:0.75rem">SVG</span>'}</div>
       <div class="lab-cn-name" title="${molData.nameJa}">${molData.nameJa}</div>
-      <div class="lab-cn-formula">${molData.formula}</div>
+      <div class="lab-cn-formula">${subHtml(molData.formula)}</div>
     `;
     return node;
   }
@@ -14500,7 +14500,7 @@
     const molId = state.lab.currentMolId;
     const molData = labGetMol(molId) ?? { nameJa: window.ChemEngine?.nameJa(molId) ?? molId, formula: window.ChemEngine?.getFormula(molId) ?? "" };
     if (dom.labMolName) dom.labMolName.textContent = molData.nameJa;
-    if (dom.labMolFormula) dom.labMolFormula.textContent = molData.formula;
+    if (dom.labMolFormula) dom.labMolFormula.innerHTML = subHtml(molData.formula);
     const svgHtml = labGetStructureDisplay(molId, "lab");
     if (dom.labMolStructure) {
       dom.labMolStructure.innerHTML = svgHtml || '<span class="lab-struct-placeholder">構造式を描画中...</span>';
@@ -14750,6 +14750,16 @@
     return String(s).replace(/[&<>"']/g, c => ({
       "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;",
     }[c]));
+  }
+
+  // 分子式・示性式の Unicode 下付き/上付き（環境依存で大きさ・ベースラインが
+  // 不揃いになる）を、正式な HTML <sub>/<sup> に変換して揃える。
+  const _SUB_CHARS = "₀₁₂₃₄₅₆₇₈₉", _SUP_CHARS = "⁰¹²³⁴⁵⁶⁷⁸⁹⁺⁻", _SUP_PLAIN = "0123456789+-";
+  function subHtml(s) {
+    let t = escHtml(s == null ? "" : s);
+    t = t.replace(/[₀-₉]+/g, m => "<sub>" + m.split("").map(c => _SUB_CHARS.indexOf(c)).join("") + "</sub>");
+    t = t.replace(/[⁰-⁹⁺⁻]+/g, m => "<sup>" + m.split("").map(c => _SUP_PLAIN[_SUP_CHARS.indexOf(c)]).join("") + "</sup>");
+    return t;
   }
 
   // ── 共反応物クリア ──────────────────────────────────────────────────────
@@ -18196,7 +18206,7 @@
       card.innerHTML = `
         <button type="button" class="dict-card-export-btn" data-mol-id="${escHtml(mol.id)}" title="この構造式を画像として保存" aria-label="画像保存">📷</button>
         <div class="dict-card-name">${escHtml(mol.displayName)}</div>
-        <div class="dict-card-formula">${mol.formula}</div>
+        <div class="dict-card-formula">${subHtml(mol.formula)}</div>
         <div class="dict-card-svg structure-view">${cardStructure}</div>
         <div class="dict-card-chips">${chips}</div>
       `;
@@ -18781,7 +18791,7 @@
     parts.push(kv("IUPAC名", escHtml(mol.iupacName)));
     if (mol.aliases?.length) parts.push(kv("別名", mol.aliases.map(escHtml).join("、")));
     parts.push(kv("CAS番号", escHtml(mol.casNumber)));
-    parts.push(kv("分子式", mol.formula));
+    parts.push(kv("分子式", subHtml(mol.formula)));
     parts.push(kv("示性式", escHtml(mol.condensedFormula)));
     parts.push(kv("分子量", mol.molecularWeight != null ? `${mol.molecularWeight} g/mol` : null));
     parts.push(kv("SMILES", `<code>${escHtml(mol.smiles ?? "")}</code>`));
