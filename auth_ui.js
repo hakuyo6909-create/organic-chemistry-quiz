@@ -57,6 +57,52 @@
     if (el.authTeacherBtn) {
       el.authTeacherBtn.hidden = (state.user.role !== 'teacher');
     }
+    // 記録コード出力は生徒のみ（記録が残るのは student のため）
+    if (el.authExportCodeBtn) {
+      el.authExportCodeBtn.hidden = (state.user.role !== 'student');
+    }
+  }
+
+  // ── 記録コード（生徒→先生の回収用）────────────
+  async function showLogCode() {
+    if (!el.logcodeOverlay || !global.OrgQuizLogCode) return;
+    if (!state.user || state.user.role !== 'student') return;
+    el.logcodeMsg.textContent = '';
+    el.logcodeText.value = '記録コードを生成中…';
+    el.logcodeOverlay.hidden = false;
+    try {
+      const code = await global.OrgQuizLogCode.exportForStudent(state.user.id);
+      el.logcodeText.value = code;
+      el.logcodeMsg.textContent = `長さ ${code.length.toLocaleString()} 文字。全部コピーして先生に提出してください。`;
+    } catch (e) {
+      el.logcodeText.value = '';
+      el.logcodeMsg.textContent = 'エラー: ' + (e && e.message);
+    }
+  }
+  function hideLogCode() { if (el.logcodeOverlay) el.logcodeOverlay.hidden = true; }
+  async function copyLogCode() {
+    if (!el.logcodeText.value) return;
+    try {
+      el.logcodeText.select();
+      if (global.navigator && global.navigator.clipboard) {
+        await global.navigator.clipboard.writeText(el.logcodeText.value);
+      } else {
+        global.document.execCommand('copy');
+      }
+      el.logcodeMsg.textContent = '✅ コピーしました。先生に貼り付けて提出してください。';
+    } catch (_) {
+      el.logcodeMsg.textContent = '手動でコピーしてください（Ctrl+A → Ctrl+C）。';
+    }
+  }
+  function downloadLogCode() {
+    if (!el.logcodeText.value || !state.user) return;
+    const blob = new Blob([el.logcodeText.value], { type: 'text/plain;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `記録コード_${state.user.id}.txt`;
+    document.body.appendChild(a); a.click();
+    setTimeout(() => { URL.revokeObjectURL(url); a.remove(); }, 0);
   }
 
   // ── ログインオーバーレイ表示/非表示 ───────────
@@ -426,7 +472,15 @@
       authUserId:    document.getElementById('authUserId'),
       authUserName:  document.getElementById('authUserName'),
       authTeacherBtn:document.getElementById('authTeacherBtn'),
+      authExportCodeBtn: document.getElementById('authExportCodeBtn'),
       authLogoutBtn: document.getElementById('authLogoutBtn'),
+
+      logcodeOverlay:  document.getElementById('logcodeOverlay'),
+      logcodeText:     document.getElementById('logcodeText'),
+      logcodeCopyBtn:  document.getElementById('logcodeCopyBtn'),
+      logcodeDownloadBtn: document.getElementById('logcodeDownloadBtn'),
+      logcodeCloseBtn: document.getElementById('logcodeCloseBtn'),
+      logcodeMsg:      document.getElementById('logcodeMsg'),
 
       bootstrapOverlay: document.getElementById('bootstrapOverlay'),
       bsTeacherNumber:  document.getElementById('bsTeacherNumber'),
@@ -451,6 +505,10 @@
 
     if (el.authLogoutBtn) el.authLogoutBtn.addEventListener('click', logout);
     if (el.authTeacherBtn) el.authTeacherBtn.addEventListener('click', openTeacherMode);
+    if (el.authExportCodeBtn) el.authExportCodeBtn.addEventListener('click', showLogCode);
+    if (el.logcodeCopyBtn) el.logcodeCopyBtn.addEventListener('click', copyLogCode);
+    if (el.logcodeDownloadBtn) el.logcodeDownloadBtn.addEventListener('click', downloadLogCode);
+    if (el.logcodeCloseBtn) el.logcodeCloseBtn.addEventListener('click', hideLogCode);
 
     if (el.bsCancelBtn) el.bsCancelBtn.addEventListener('click', hideBootstrap);
     if (el.bsSubmitBtn) el.bsSubmitBtn.addEventListener('click', submitBootstrap);

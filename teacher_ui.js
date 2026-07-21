@@ -665,6 +665,32 @@
     }
   }
 
+  // ── 記録コードの取り込み（生徒→先生の回収）──
+  function setImportMsg(msg, isErr) {
+    if (!el.importCodeMsg) return;
+    el.importCodeMsg.textContent = msg;
+    el.importCodeMsg.style.color = isErr ? '#c0392b' : '#2c7a3f';
+  }
+  async function importLogCode() {
+    if (!global.OrgQuizLogCode) { setImportMsg('取り込み機能が読み込まれていません', true); return; }
+    const raw = (el.importCodeText.value || '').trim();
+    if (!raw) { setImportMsg('コードを貼り付けてください', true); return; }
+    if (el.importCodeBtn) el.importCodeBtn.disabled = true;
+    setImportMsg('取り込み中…', false);
+    try {
+      const r = await global.OrgQuizLogCode.importCode(raw);
+      _allSessionsCache = null;
+      setImportMsg(`✅ 取り込み完了: ${r.studentId}（セッション ${r.sessions} 件 / イベント ${r.events} 件）`, false);
+      el.importCodeText.value = '';
+      await refreshRoster();
+      if (typeof refreshLogs === 'function') refreshLogs();
+    } catch (e) {
+      setImportMsg('エラー: ' + (e && e.message), true);
+    } finally {
+      if (el.importCodeBtn) el.importCodeBtn.disabled = false;
+    }
+  }
+
   async function delStudentLogs() {
     const sid = prompt('全ログを削除する生徒の ID を入力してください（例: 2315H）。プロファイル/累計時間も初期化されます。');
     if (!sid) return;
@@ -769,6 +795,9 @@
       exportStudent:     document.getElementById('exportStudent'),
       exportFormat:      document.getElementById('exportFormat'),
       exportRunBtn:      document.getElementById('exportRunBtn'),
+      importCodeText:    document.getElementById('importCodeText'),
+      importCodeBtn:     document.getElementById('importCodeBtn'),
+      importCodeMsg:     document.getElementById('importCodeMsg'),
       delStudentLogsBtn: document.getElementById('delStudentLogsBtn'),
       delAllLogsBtn:     document.getElementById('delAllLogsBtn'),
       wipeAllBtn:        document.getElementById('wipeAllBtn'),
@@ -806,6 +835,7 @@
     // export タブ
     if (el.exportTarget)      el.exportTarget.addEventListener('change', onExportTargetChange);
     if (el.exportRunBtn)      el.exportRunBtn.addEventListener('click', exportRun);
+    if (el.importCodeBtn)     el.importCodeBtn.addEventListener('click', importLogCode);
     if (el.delStudentLogsBtn) el.delStudentLogsBtn.addEventListener('click', delStudentLogs);
     if (el.delAllLogsBtn)     el.delAllLogsBtn.addEventListener('click', delAllLogs);
     if (el.wipeAllBtn)        el.wipeAllBtn.addEventListener('click', wipeAll);

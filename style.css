@@ -5062,3 +5062,31 @@ body.is-teacher-mode .site-nav { display: none; }
 [data-theme="dark"] .iupac-expl { background: rgba(38, 166, 154, 0.12); }
 [data-theme="dark"] .iupac-result-expl { background: rgba(255, 255, 255, 0.05); color: #bbb; }
 [data-theme="dark"] .iupac-question-text { color: #999; }
+
+/* ── 記録コード（オフライン回収）UI ───────────────────────────── */
+.auth-export-btn { background: #6ab04c; color: #fff; border-color: #6ab04c; }
+.auth-export-btn[hidden] { display: none; }
+.logcode-overlay {
+  position: fixed; inset: 0; background: rgba(10, 14, 22, 0.92);
+  z-index: 9000; display: flex; align-items: center; justify-content: center;
+  padding: 24px; backdrop-filter: blur(6px);
+}
+.logcode-overlay[hidden] { display: none; }
+.logcode-modal {
+  width: 100%; max-width: 560px; background: #1e2638; border: 1px solid #2d3548;
+  border-radius: 12px; padding: 24px; color: #e8ebf2;
+}
+.logcode-title { margin: 0 0 8px; font-size: 1.15rem; }
+.logcode-desc { margin: 0 0 12px; font-size: 0.9rem; line-height: 1.5; color: #b9c2d4; }
+.logcode-textarea, .import-code-textarea {
+  width: 100%; box-sizing: border-box; font-family: monospace; font-size: 0.8rem;
+  word-break: break-all; white-space: pre-wrap; resize: vertical;
+  background: #12192a; color: #d6def0; border: 1px solid #2d3548; border-radius: 8px; padding: 10px;
+}
+.logcode-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+.logcode-msg, .import-code-msg { margin-top: 10px; font-size: 0.85rem; color: #9ad; min-height: 1.2em; }
+.import-code-textarea { margin: 6px 0; }
+[data-theme="light"] .logcode-modal { background: #fff; border-color: #d5dae4; color: #1b2432; }
+[data-theme="light"] .logcode-desc { color: #566; }
+[data-theme="light"] .logcode-textarea,
+[data-theme="light"] .import-code-textarea { background: #f4f6fa; color: #1b2432; border-color: #d5dae4; }

@@ -26,6 +26,7 @@
     <span class="auth-user-id" id="authUserId"></span>
     <span class="auth-user-name" id="authUserName"></span>
     <button type="button" class="auth-teacher-btn" id="authTeacherBtn" hidden>🎓 教員モード</button>
+    <button type="button" class="auth-export-btn" id="authExportCodeBtn" hidden>🧾 記録コード</button>
     <button type="button" class="auth-logout-btn" id="authLogoutBtn">ログアウト</button>
   </div>
 
@@ -754,6 +755,15 @@
           <button type="button" class="primary-btn" id="exportRunBtn">ダウンロード</button>
         </div>
       </div>
+      <div class="export-section">
+        <h3 class="stats-title">📤 記録コードの取り込み（生徒から集めたコードを貼り付け）</h3>
+        <p class="export-hint">生徒が「🧾 記録コード」で出力した文字列を1件ずつ貼り付けて「取り込む」を押すと、その生徒のログがこの端末に取り込まれ、上の「ログ閲覧／集計」に反映されます。</p>
+        <textarea id="importCodeText" class="import-code-textarea" rows="4" spellcheck="false" placeholder="ORGQUIZLOG:v1:.... を貼り付け"></textarea>
+        <div class="export-row">
+          <button type="button" class="primary-btn" id="importCodeBtn">取り込む</button>
+          <span class="import-code-msg" id="importCodeMsg"></span>
+        </div>
+      </div>
       <div class="export-section danger-section">
         <h3 class="stats-title">⚠ ログ削除（取り消し不可）</h3>
         <div class="export-row">
@@ -879,6 +889,21 @@
   </div>
 </div>
 
+<!-- 生徒用: 記録コード出力モーダル -->
+<div class="logcode-overlay" id="logcodeOverlay" hidden>
+  <div class="logcode-modal">
+    <h3 class="logcode-title">🧾 記録コード</h3>
+    <p class="logcode-desc">下のコードを<b>すべてコピー</b>して先生に提出してください（あなたの学習記録が入っています）。長くても全部必要です。</p>
+    <textarea id="logcodeText" class="logcode-textarea" readonly rows="8" spellcheck="false"></textarea>
+    <div class="logcode-actions">
+      <button type="button" class="primary-btn" id="logcodeCopyBtn">📋 全部コピー</button>
+      <button type="button" class="ghost-btn" id="logcodeDownloadBtn">💾 ファイルで保存</button>
+      <button type="button" class="ghost-btn" id="logcodeCloseBtn">閉じる</button>
+    </div>
+    <div class="logcode-msg" id="logcodeMsg"></div>
+  </div>
+</div>
+
 <script>
   // JSME (GWT) ロード完了コールバック
   function jsmeOnLoad() { window._jsmeReady = true; }
@@ -893,6 +918,7 @@
 <script src="roster_seed.js"></script>
 <script src="sync_config.js"></script>
 <script src="sync.js"></script>
+<script src="logcode.js"></script>
 <script src="logger.js"></script>
 <script src="molecules_svg.js"></script>
 <script src="moleculeSMILES.js"></script>
