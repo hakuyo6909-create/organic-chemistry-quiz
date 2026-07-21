@@ -14411,12 +14411,12 @@
     return row;
   }
 
-  // 設定が「縮合構造式」のとき、molecules 辞書に condensedFormula(Html) があれば
-  // 縮合構造式 HTML を返し、なければ skeletal SVG にフォールバック
+  // 設定が「縮合構造式」のとき、手動キュレート（手描きSVG／HTML）があれば
+  // 縮合構造式を返し、なければ skeletal SVG にフォールバック（自動整形は崩れやすいため使わない）
   function labGetStructureDisplay(molId, variant) {
     if (state.settings && state.settings.formulaStyle === "condensed") {
       const mol = molecules[molId];
-      if (mol && (mol.condensedFormulaHtml || mol.condensedFormula)) {
+      if (mol && (CONDENSED_FORMULA_SVGS[molId] || mol.condensedFormulaHtml)) {
         return renderStructureForMolecule(mol, { variant: variant || "lab" });
       }
     }
@@ -18516,20 +18516,10 @@
       return out.join("");
     }
     const html = mol.condensedFormulaHtml;
-    const text = mol.condensedFormula;
     if (html) {
       out.push(`<div class="dict-condensed-formula">${html}</div>`);
-    } else if (text) {
-      // Phase 3: condensedFormula を自動フォーマット（<sub> + ダッシュ挿入）
-      // キャッシュ優先・失敗時は escHtml 経由でそのまま表示
-      if (!mol._autoCondensedHtml) {
-        try { mol._autoCondensedHtml = autoFormatCondensedHtml(text) || escHtml(text); }
-        catch (_) { mol._autoCondensedHtml = escHtml(text); }
-      }
-      out.push(`<div class="dict-condensed-formula">${mol._autoCondensedHtml}</div>`);
-      out.push(`<div class="dict-condensed-formula-note" style="font-size:0.7rem;color:#a1887f;">※ 自動フォーマット表示（手動補正版は未登録）</div>`);
     } else {
-      // 未登録分子: 骨格式にフォールバック + 注記
+      // 手動キュレート未登録の分子は、自動整形が崩れやすいため骨格式にフォールバック
       out.push(`<div class="dict-condensed-formula dict-condensed-formula-fallback">縮合構造式 未登録（骨格式を表示）</div>`);
       out.push(`<div class="dict-structure-box">${mol.structure || "（SVGなし）"}</div>`);
     }
@@ -18708,15 +18698,8 @@
       if (html) {
         return `<div class="condensed-formula-inline condensed-formula-inline--${variant}">${html}</div>`;
       }
-      const text = mol.condensedFormula;
-      if (text) {
-        if (!mol._autoCondensedHtml) {
-          try { mol._autoCondensedHtml = autoFormatCondensedHtml(text) || escHtml(text); }
-          catch (_) { mol._autoCondensedHtml = escHtml(text); }
-        }
-        return `<div class="condensed-formula-inline condensed-formula-inline--${variant}">${mol._autoCondensedHtml}</div>`;
-      }
-      // 未登録分子は骨格式にフォールバック
+      // 手動キュレート（手描きSVG／HTML）が無い分子は、自動整形が崩れやすいため
+      // 骨格式 SVG（常に整った表示）にフォールバックする。
     }
     return mol.structure || "";
   }
