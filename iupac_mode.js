@@ -87,6 +87,19 @@
 
   function isAscii(text) { return typeof text === "string" && text.indexOf("\n") !== -1; }
 
+  // 示性式・分子式を「元素文字は同じ行・数字は正式な下付き」で描画するための HTML 化。
+  // Unicode 下付き（₀-₉。環境により大きさ/ベースラインが不揃いになる）を <sub> に変換する。
+  // 上付き（⁰-⁹⁺⁻。イオン電荷など）は <sup> に変換する。
+  const _SUB = "₀₁₂₃₄₅₆₇₈₉", _SUP = "⁰¹²³⁴⁵⁶⁷⁸⁹⁺⁻", _SUP_TO = "0123456789+-";
+  function chemHtml(text) {
+    let s = escHtml(text);
+    s = s.replace(/[₀-₉]+/g, (m) =>
+      "<sub>" + m.split("").map((c) => _SUB.indexOf(c)).join("") + "</sub>");
+    s = s.replace(/[⁰-⁹⁺⁻]+/g, (m) =>
+      "<sup>" + m.split("").map((c) => _SUP_TO[_SUP.indexOf(c)]).join("") + "</sup>");
+    return s;
+  }
+
   /* ----------------------------------------------------------
      選択肢シャッフル:
      元の choices の並びをシャッフルし、元の answer(正解の
@@ -271,8 +284,11 @@
     }
     if (dom.promptQuestion) dom.promptQuestion.textContent = q.question;
     if (dom.prompt) {
-      dom.prompt.classList.toggle("is-ascii", isAscii(q.prompt));
-      dom.prompt.textContent = q.prompt;
+      const ascii = isAscii(q.prompt);
+      dom.prompt.classList.toggle("is-ascii", ascii);
+      // 複数行の構造式(ASCII)は等幅のまま。1行の示性式/分子式は下付きを正式化。
+      if (ascii) dom.prompt.textContent = q.prompt;
+      else dom.prompt.innerHTML = chemHtml(q.prompt);
     }
 
     if (window.OrgQuizLogger) {
@@ -287,8 +303,8 @@
     item.shuffledChoices.forEach((choiceText, pos) => {
       const btn = document.createElement("button");
       btn.type = "button";
-      if (isAscii(choiceText)) btn.classList.add("is-ascii");
-      btn.textContent = choiceText;
+      if (isAscii(choiceText)) { btn.classList.add("is-ascii"); btn.textContent = choiceText; }
+      else btn.innerHTML = chemHtml(choiceText);
       btn.addEventListener("click", () => handleAnswer(pos));
       dom.choices.appendChild(btn);
     });
@@ -380,9 +396,9 @@
       row.innerHTML = `
         <td>${idx + 1}</td>
         <td>${escHtml(CATEGORIES[q.category] || q.category)}</td>
-        <td class="iupac-result-prompt">${escHtml(flat(q.prompt))}</td>
-        <td>${escHtml(flat(item.shuffledChoices[item.selectedPos]))}</td>
-        <td>${escHtml(flat(item.shuffledChoices[item.correctPos]))}</td>
+        <td class="iupac-result-prompt">${chemHtml(flat(q.prompt))}</td>
+        <td>${chemHtml(flat(item.shuffledChoices[item.selectedPos]))}</td>
+        <td>${chemHtml(flat(item.shuffledChoices[item.correctPos]))}</td>
         <td>${item.correct ? "○" : "×"}</td>
       `;
       dom.resultTable.appendChild(row);
