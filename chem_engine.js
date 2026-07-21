@@ -143,7 +143,7 @@ window.ChemEngine = (() => {
     // アミド加水分解 → 専用関数に移行
     // ハロゲン化アルキル（新規）
     hal_naoh_sub:         '[C:1][Br,Cl,I]>>[C:1]O',
-    hal_koh_elim:         '[CH2:1][CH:2][Br,Cl,I]>>[CH2:1]=[CH:2]',
+    hal_koh_elim:         '[C!H0:1][C:2][Cl,Br,I]>>[C:1]=[C:2]',  // 専用関数 computeHalKohElim で処理（末端側選択）
     // 油脂（新規）
     fat_saponify:         '[C:1](=O)O[C:2]>>[C:1](=O)O',
     fat_hydrolysis:       '[C:1](=O)O[C:2]>>[C:1](=O)O',
@@ -226,7 +226,7 @@ window.ChemEngine = (() => {
     ami2_hydrolysis_acid: '[CX3](=O)[NX3]',
     ami2_hydrolysis_base: '[CX3](=O)[NX3]',
     hal_naoh_sub:       '[C][Br,Cl,I]',
-    hal_koh_elim:       '[CH2][CH][Br,Cl,I]',
+    hal_koh_elim:       '[C!H0][C][Cl,Br,I]',
     fat_saponify:       '[C](=O)OC',
     fat_hydrolysis:     '[C](=O)OC',
     fat_hardening:      '[CH]=[CH]',
@@ -3446,6 +3446,41 @@ window.ChemEngine = (() => {
     return { main: null, byProducts: [] };
   }
 
+  // ── ハロゲン化アルキル：エタノール性KOHによるE2脱離 ─────────────────────
+  // ほとんどのハロゲン化アルキル（β水素をもつもの）で進行する。ハロゲンの付いた
+  // 炭素（α）と、隣接してH をもつ炭素（β）との間に C=C 二重結合が生成し、
+  // ハロゲンと β-H が脱離する（+ KX + H₂O）。
+  // β炭素が複数ある場合は「末端の方の炭素」＝置換の少ないアルケン
+  // （C=C 上の水素数が最多）を主生成物とする。
+  function _alkeneHCount(smiles) {
+    const g = _molGraph(smiles);
+    if (!g) return -1;
+    let h = 0;
+    for (let i = 0; i < g.atoms.length; i++) {
+      if (g.atoms[i].z !== 6) continue;
+      for (const e of g.adj[i]) {
+        if (e.bo === 2 && e.to > i && g.atoms[e.to].z === 6) {
+          h += (g.atoms[i].impHs || 0) + (g.atoms[e.to].impHs || 0);
+        }
+      }
+    }
+    return h;
+  }
+  function computeHalKohElim(smiles) {
+    const can = canonSmiles(smiles);
+    if (!can || !hasSubstruct(can, '[C!H0][C][Cl,Br,I]')) return { main: null, byProducts: [] };
+    // β-脱離: (β炭素:H保有)-(α炭素:ハロゲン) → C=C
+    const cands = [...new Set(applyRxnSmarts(can, '[C!H0:1][C:2][Cl,Br,I]>>[C:1]=[C:2]'))];
+    if (!cands.length) return { main: null, byProducts: [] };
+    // 末端側（C=C 上の水素が最多＝最も置換が少ない）を主生成物に選ぶ
+    let main = cands[0], best = _alkeneHCount(cands[0]);
+    for (let k = 1; k < cands.length; k++) {
+      const sc = _alkeneHCount(cands[k]);
+      if (sc > best) { best = sc; main = cands[k]; }
+    }
+    return { main, byProducts: [] };
+  }
+
   // ── アルコール分子間脱水（エーテル生成） ─────────────────────────────────
   function computeAlcEther(smiles) {
     const can = canonSmiles(smiles);
@@ -4438,6 +4473,7 @@ window.ChemEngine = (() => {
     const _specialFns = {
       alc_oxidize:       computeAlcOxidize,
       alc_dehydrate:     computeAlcDehydrate,
+      hal_koh_elim:      computeHalKohElim,
       alc_ether:         computeAlcEther,
       alc_na:            computeAlcNa,
       ar_h2_add:         computeArH2Add,
@@ -4594,7 +4630,7 @@ window.ChemEngine = (() => {
 
     // 専用関数を持つ反応も APPLY_CHECK のみで可否判定
     const _specialIds = new Set([
-      'alc_oxidize', 'alc_dehydrate', 'alc_ether', 'alc_na',
+      'alc_oxidize', 'alc_dehydrate', 'hal_koh_elim', 'alc_ether', 'alc_na',
       'ar_h2_add', 'ar_side_oxidize', 'ar_kmno4_oxidize',
       'cumene_cleave', 'phe_kolbe', 'formic_dehydrate', 'cac2_water',
       'ar_v2o5_anhydride', 'ar_sidechain_cl', 'aly_dimerize', 'aly_trimerize',
