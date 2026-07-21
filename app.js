@@ -5237,10 +5237,15 @@
       functionalGroups: ["carboxylic acid", "amine"],
       classification: ["アミノ酸"],
       acidBase: { type: "両性", reason: "アミノ基とカルボキシル基の両方を持つ" },
+      // α炭素は CH₃・H・COOH・NH₂ の4置換基がすべて異なる不斉炭素 → R/S の鏡像異性体をもつ
+      enantiomers: [
+        { tag: "S", label: "(S)体（L-アラニン）", mol3dKey: "alanineS", note: "天然・タンパク質構成型。生体のタンパク質はほぼ L体（S体）のみで構成される" },
+        { tag: "R", label: "(R)体（D-アラニン）", mol3dKey: "alanineR", note: "L体の鏡像。細菌細胞壁のペプチドグリカンに存在（ペニシリンの標的部位）" },
+      ],
       reactions: {
         na: { observation: "H₂が発生", product: "アラニンナトリウム塩", reason: "カルボキシル基がNaと反応" },
       },
-      trivia: "必須でないアミノ酸の一つ。タンパク質に広く含まれる",
+      trivia: "必須でないアミノ酸の一つ。タンパク質に広く含まれる。最も単純な不斉アミノ酸で、L体（S体）が天然型",
     },
 
     fructose: {
