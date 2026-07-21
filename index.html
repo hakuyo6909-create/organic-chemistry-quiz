@@ -756,13 +756,21 @@
         </div>
       </div>
       <div class="export-section">
-        <h3 class="stats-title">📤 記録コードの取り込み（生徒から集めたコードを貼り付け）</h3>
-        <p class="export-hint">生徒が「🧾 記録コード」で出力した文字列を1件ずつ貼り付けて「取り込む」を押すと、その生徒のログがこの端末に取り込まれ、上の「ログ閲覧／集計」に反映されます。</p>
-        <textarea id="importCodeText" class="import-code-textarea" rows="4" spellcheck="false" placeholder="ORGQUIZLOG:v1:.... を貼り付け"></textarea>
+        <h3 class="stats-title">📤 記録の取り込み（生徒から集めたファイル／コード）</h3>
+        <p class="export-hint">生徒が「🧾 記録コード」→「💾 ファイルで保存」で作ったメモファイルを、まとめて選んで一括取り込みできます。取り込むと上の「ログ閲覧／集計」に反映され、「データ書き出し → CSV」でスプレッドシート用に出力できます。1件だけならコードを貼り付けてもOK。</p>
         <div class="export-row">
-          <button type="button" class="primary-btn" id="importCodeBtn">取り込む</button>
-          <span class="import-code-msg" id="importCodeMsg"></span>
+          <button type="button" class="primary-btn" id="importFilesBtn">📁 ファイルから一括取り込み</button>
+          <input type="file" id="importFilesInput" accept=".txt,.json,text/plain" multiple hidden />
+          <span class="import-code-msg" id="importFilesMsg"></span>
         </div>
+        <details class="import-paste-details">
+          <summary>コードを貼り付けて取り込む（1件ずつ）</summary>
+          <textarea id="importCodeText" class="import-code-textarea" rows="4" spellcheck="false" placeholder="ORGQUIZLOG:v1:.... を貼り付け"></textarea>
+          <div class="export-row">
+            <button type="button" class="primary-btn" id="importCodeBtn">取り込む</button>
+            <span class="import-code-msg" id="importCodeMsg"></span>
+          </div>
+        </details>
       </div>
       <div class="export-section danger-section">
         <h3 class="stats-title">⚠ ログ削除（取り消し不可）</h3>

@@ -691,6 +691,38 @@
     }
   }
 
+  function setFilesMsg(msg, isErr) {
+    if (!el.importFilesMsg) return;
+    el.importFilesMsg.textContent = msg;
+    el.importFilesMsg.style.color = isErr ? '#c0392b' : '#2c7a3f';
+  }
+  async function importLogFiles(ev) {
+    const input = ev && ev.target;
+    const files = (input && input.files) ? Array.from(input.files) : [];
+    if (!files.length) return;
+    if (!global.OrgQuizLogCode) { setFilesMsg('取り込み機能が読み込まれていません', true); return; }
+    let ok = 0, fail = 0; const names = []; const failNames = [];
+    for (let i = 0; i < files.length; i++) {
+      setFilesMsg(`取り込み中… (${i}/${files.length})`, false);
+      try {
+        let text = await files[i].text();
+        const idx = text.indexOf('ORGQUIZLOG:');
+        if (idx >= 0) text = text.slice(idx).trim();
+        const r = await global.OrgQuizLogCode.importCode(text);
+        ok++; names.push(r.studentId);
+      } catch (_) { fail++; failNames.push(files[i].name); }
+    }
+    _allSessionsCache = null;
+    await refreshRoster();
+    if (typeof refreshLogs === 'function') refreshLogs();
+    if (input) input.value = '';
+    const uniq = [...new Set(names)];
+    setFilesMsg(
+      `✅ ${ok}件取り込み${fail ? ` / ⚠${fail}件失敗(${failNames.join(', ')})` : ''}` +
+      `（生徒: ${uniq.join('、') || '—'}）。「データ書き出し→CSV」でスプレッドシート用に出力できます。`,
+      fail > 0);
+  }
+
   async function delStudentLogs() {
     const sid = prompt('全ログを削除する生徒の ID を入力してください（例: 2315H）。プロファイル/累計時間も初期化されます。');
     if (!sid) return;
@@ -798,6 +830,9 @@
       importCodeText:    document.getElementById('importCodeText'),
       importCodeBtn:     document.getElementById('importCodeBtn'),
       importCodeMsg:     document.getElementById('importCodeMsg'),
+      importFilesBtn:    document.getElementById('importFilesBtn'),
+      importFilesInput:  document.getElementById('importFilesInput'),
+      importFilesMsg:    document.getElementById('importFilesMsg'),
       delStudentLogsBtn: document.getElementById('delStudentLogsBtn'),
       delAllLogsBtn:     document.getElementById('delAllLogsBtn'),
       wipeAllBtn:        document.getElementById('wipeAllBtn'),
@@ -836,6 +871,8 @@
     if (el.exportTarget)      el.exportTarget.addEventListener('change', onExportTargetChange);
     if (el.exportRunBtn)      el.exportRunBtn.addEventListener('click', exportRun);
     if (el.importCodeBtn)     el.importCodeBtn.addEventListener('click', importLogCode);
+    if (el.importFilesBtn)    el.importFilesBtn.addEventListener('click', () => el.importFilesInput && el.importFilesInput.click());
+    if (el.importFilesInput)  el.importFilesInput.addEventListener('change', importLogFiles);
     if (el.delStudentLogsBtn) el.delStudentLogsBtn.addEventListener('click', delStudentLogs);
     if (el.delAllLogsBtn)     el.delAllLogsBtn.addEventListener('click', delAllLogs);
     if (el.wipeAllBtn)        el.wipeAllBtn.addEventListener('click', wipeAll);
