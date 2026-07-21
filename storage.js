@@ -170,6 +170,36 @@
     }
   }
 
+  // ── 永続ストレージ要求（ブラウザの自動削除を抑止）──
+  // 対応ブラウザに「このサイトのデータを自動削除しないで」と要求する。
+  // 学習記録を長期保存したいので初回に一度呼ぶ（拒否されても通常保存は継続）。
+  async function requestPersistence() {
+    try {
+      const nav = global.navigator;
+      if (!nav || !nav.storage || typeof nav.storage.persist !== 'function') return false;
+      if (typeof nav.storage.persisted === 'function') {
+        if (await nav.storage.persisted()) return true;   // 既に永続化済み
+      }
+      const granted = await nav.storage.persist();
+      console.log('[storage] 永続ストレージ:', granted ? '許可（自動削除されません）' : '未許可（利用継続で許可される場合あり）');
+      return granted;
+    } catch (e) {
+      console.warn('[storage] persist 要求に失敗:', e);
+      return false;
+    }
+  }
+
+  // ── ストレージ使用量の推定（教員が残量確認できるよう補助）──
+  async function estimateStorage() {
+    try {
+      const nav = global.navigator;
+      if (nav && nav.storage && typeof nav.storage.estimate === 'function') {
+        return await nav.storage.estimate();  // { usage, quota }
+      }
+    } catch (_) {}
+    return null;
+  }
+
   global.OrgQuizDB = {
     openDB,
     getMeta, setMeta,
@@ -180,5 +210,6 @@
     getMru, setMru, pushMru,
     migrateLocalStorage,
     wipeAll,
+    requestPersistence, estimateStorage,
   };
 })(window);

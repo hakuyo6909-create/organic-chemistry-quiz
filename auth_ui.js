@@ -536,6 +536,7 @@
     // IndexedDB 起動 → localStorage マイグレーション → ログイン画面表示
     if (DB) {
       DB.openDB()
+        .then(() => { if (DB.requestPersistence) DB.requestPersistence(); }) // 自動削除の抑止を要求（best-effort）
         .then(() => DB.migrateLocalStorage())
         .then(() => seedDefaultRoster())
         .then(() => showLogin())
