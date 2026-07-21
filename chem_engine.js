@@ -346,6 +346,12 @@ window.ChemEngine = (() => {
     // 酸無水物反応（R1 = 酸無水物）
     anhydride_alc:     ['anhydride_alc_b', 'anhydride_phe_b'],
     anhydride_amine:   ['anhydride_amine_b'],
+    // 分子間脱水（エーテル生成）: R1-OH + R2-OH → R1-O-R2。共反応物に他経路の
+    // アルコールを選べば混合エーテル（非対称エーテル）も合成できる。
+    alc_ether:         ['alc_ether_b'],
+    eth_form:          ['alc_ether_b'],
+    // 分子間脱水（酸無水物生成）: R1COOH + R2COOH → 酸無水物。混合酸無水物も可。
+    aca_anhydride_inter: ['aca_anhyd_inter_b'],
     // ウィリアムソンエーテル合成（R1 = アルコキシドまたはフェノキシド）
     eth_williamson:    ['eth_williamson_alc', 'eth_williamson_phe'],
     // トリグリセリド合成（R1=グリセリン、R2=カルボン酸）
@@ -398,6 +404,10 @@ window.ChemEngine = (() => {
     acyl_cl_phe:      '[C:1](=O)Cl.[c:2][OH:3]>>[C:1](=O)[O:3][c:2]',
     acyl_cl_amine:    '[C:1](=O)Cl.[NH2:2]>>[C:1](=O)[N:2]',
     aca_esterify_phe: '[C:1](=O)[OH].[c:2][OH:3]>>[C:1](=O)[O:3][c:2]',
+    // 分子間脱水: 2分子のアルコール → エーテル（H₂O 脱離）
+    alc_ether_b:      '[CX4:1][OH].[CX4:2][OH]>>[CX4:1]O[CX4:2]',
+    // 分子間脱水: 2分子のカルボン酸 → 酸無水物（H₂O 脱離）
+    aca_anhyd_inter_b:'[C:1](=O)[OH].[C:2](=O)[OH]>>[C:1](=O)O[C:2](=O)',
     // グリニャール反応（RMgBr が R1）
     // RCHO（アルデヒド、H1=CHO）→ 第2級アルコール
     grignard_b_ald:   '[#6:1][Mg][Br,Cl].[CX3H1:2]=O>>[#6:1][C:2]O',
@@ -499,6 +509,10 @@ window.ChemEngine = (() => {
     acyl_cl_phe:      '[C](=O)Cl',
     acyl_cl_amine:    '[C](=O)Cl',
     aca_esterify_phe: '[C](=O)[OH]',
+    // 分子間脱水（エーテル生成）: R1 = アルコール
+    alc_ether_b:      '[CX4][OH]',
+    // 分子間脱水（酸無水物生成）: R1 = カルボン酸
+    aca_anhyd_inter_b:'[C](=O)[OH]',
     grignard_b_ald:   '[#6][Mg]',
     grignard_b_fald:  '[#6][Mg]',
     grignard_b_ket:   '[#6][Mg]',
@@ -642,6 +656,10 @@ window.ChemEngine = (() => {
     acyl_cl_phe:      ['[OH]c'],
     acyl_cl_amine:    ['[NH2]', '[NH2]c'],
     aca_esterify_phe: ['[OH]c'],
+    // 分子間脱水（エーテル生成）: 共反応物はアルコール（他経路のアルコールも可）
+    alc_ether_b:      ['[CX4][OH]'],
+    // 分子間脱水（酸無水物生成）: 共反応物はカルボン酸
+    aca_anhyd_inter_b:['[C](=O)[OH]'],
     // グリニャール試薬の共反応物
     grignard_b_ald:   ['[CX3H1]=O'],           // アルデヒド（CHO）
     grignard_b_fald:  ['[CH2]=O'],             // ホルムアルデヒドのみ
